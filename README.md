@@ -1,8 +1,11 @@
-#Fedora Directory Server
+# Fedora Directory Server
+
 http://directory.fedoraproject.org/
 
-#389-ds-base-1.2.6.1-2.el5.x86_64
+# 389-ds-base-1.2.6.1-2.el5.x86_64
+
 also installs
+
     svrcore-4.0.4-3.el5.x86_64
     mozldap-6.0.5-1.el5.x86_64
     mozldap-tools-6.0.5-1.el5.x86_64
