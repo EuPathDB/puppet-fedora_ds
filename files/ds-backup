@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# $Id$
+# $URL$
+# Descrition
+#
+#
+# This script is used to save copies of the LDAP database.
+# The database is exported on a daily basis using "db2ldif" command.
+# The export file is named daily.ldif.0
+# A history of 3 days is saved daily.ldif.0 to .2
+# The copy of the first of each month is saved under
+# "monthly.ldif.YYYYMMDD.gz"
+#
+# This script is run automatically from the crontab.
+#
+# http://forums.sun.com/thread.jspa?messageID=9206579
+
+#
+# Usage
+#
+# This script does not need any parameter to run.
+# You have to change the "slapd-instance-name" in the definitions.
+# Use the LDAP Instance Name as it is on your LDAP server.
+#
+# An entry should be added to the crontab.
+# A typical crontab entry is:
+# 7 4 * * * /var/opt/mps/serverroot/scripts/daily.ldif.sh
+#
+#
+
+LOGFILE=/var/log/dirsrv/fedora-ds-backup
+
+DBDIR=$(ls /var/lib/dirsrv/)
+DB2LDIF=/usr/lib64/dirsrv/$DBDIR/db2ldif
+LDIF_DIR=/var/lib/dirsrv/$DBDIR/ldif
+DAILY_LDIF_FILE=$LDIF_DIR/daily.ldif
+MONTHLY_LDIF_FILE=$LDIF_DIR/monthly.ldif
+
+DAY=$(date +"%e")
+DATE=$(date +"%Y%m%d_%H:%M")
+
+
+#
+# Backup Execution
+#
+
+$DB2LDIF -n userRoot     -a $DAILY_LDIF_FILE-userRoot
+$DB2LDIF -n netscapeRoot -a $DAILY_LDIF_FILE-netscapeRoot
+
+
+# Files rotation
+#
+
+# Rotation for Database = userRoot
+if [ -f $DAILY_LDIF_FILE-userRoot.1 ]; then
+	mv $DAILY_LDIF_FILE-userRoot.1 $DAILY_LDIF_FILE-userRoot.2
+fi
+
+if [ -f $DAILY_LDIF_FILE-userRoot.0 ]; then
+	mv $DAILY_LDIF_FILE-userRoot.0 $DAILY_LDIF_FILE-userRoot.1
+fi
+
+cp $DAILY_LDIF_FILE-userRoot $DAILY_LDIF_FILE-userRoot.0
+
+
+# Rotation for Database = netscapeRoot
+if [ -f $DAILY_LDIF_FILE-netscapeRoot.1 ]; then
+	mv $DAILY_LDIF_FILE-netscapeRoot.1 $DAILY_LDIF_FILE-netscapeRoot.2
+fi
+
+if [ -f $DAILY_LDIF_FILE-netscapeRoot.0 ]; then
+	mv $DAILY_LDIF_FILE-netscapeRoot.0 $DAILY_LDIF_FILE-netscapeRoot.1
+fi
+
+cp $DAILY_LDIF_FILE-netscapeRoot $DAILY_LDIF_FILE-netscapeRoot.0
+
+# Monthly action
+if [ $DAY -eq 1 ]; then
+	cp $DAILY_LDIF_FILE-userRoot $MONTHLY_LDIF_FILE-userRoot.$DATE
+/usr/bin/gzip $MONTHLY_LDIF_FILE-userRoot.$DATE
+
+cp $DAILY_LDIF_FILE-netscapeRoot $MONTHLY_LDIF_FILE-netscapeRoot.$DATE
+/usr/bin/gzip $MONTHLY_LDIF_FILE-netscapeRoot.$DATE
+
+fi
